@@ -7,9 +7,6 @@ from datetime import datetime
 import datetime
 import sqlite3
 
-DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
-USER_ID = "b."
-TOKEN = "BQDaBc1UbgRFtWtv9o6mrUi_H1IbNZbj-QkkewLS1yb-uRiYiaz2wzSI2zLpvbOunoAnWTbBPOHUreFgfNX8wVgCYRcwfpctAtE6g9YNztOzN2-ECKSxkwGGYCZXDfaqQgIDP2LH4s_em7XRTp9hvhpCihtsCXlvEY7RxgnMm7bX"
 
 def check_if_valid_data(df: pd.DataFrame) -> bool:
     # Check if dataframe is empty
@@ -28,20 +25,22 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
         raise Exception("Null values found")
 
     # Check that all timestamps are of yesterday's date
-    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-    yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+    # yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    # yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    timestamps = df["timestamp"].tolist()
-    for timestamp in timestamps:
-        if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
-            raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
+    # timestamps = df["timestamp"].tolist()
+    # for timestamp in timestamps:
+    #     if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
+    #         raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
 
-    return True
+    # return True
 
-if __name__ == "__main__":
+# Job scheduler
+def run_spotify_etl():
+    DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
+    USER_ID = "b."
+    TOKEN = "BQDaBc1UbgRFtWtv9o6mrUi_H1IbNZbj-QkkewLS1yb-uRiYiaz2wzSI2zLpvbOunoAnWTbBPOHUreFgfNX8wVgCYRcwfpctAtE6g9YNztOzN2-ECKSxkwGGYCZXDfaqQgIDP2LH4s_em7XRTp9hvhpCihtsCXlvEY7RxgnMm7bX"
 
-    # Extract part of the ETL process
- 
     headers = {
         "Accept" : "application/json",
         "Content-Type" : "application/json",
