@@ -1,6 +1,5 @@
-import curses
-import sqlalchemy 
-import pandas as pd
+import sqlalchemy
+import pandas as pd 
 from sqlalchemy.orm import sessionmaker
 import requests
 import json
@@ -8,49 +7,54 @@ from datetime import datetime
 import datetime
 import sqlite3
 
-DATABASE_LOCATION = "sqlite:///my_player_sqlite"
-USER_ID =  "b."
-TOKEN = "BQDdbnAblG-1fKISx5l09zIOCNVO4Tm-uwRiXS3tloAghvwpjzjHKoGif_xT098yHDW9r5t6E8R8ZF2stBVvs7fGTwoB2Zu-x8tM4br1DBOAKSniJCV9Z0cWHOzJYRlP7LUQwHWv7qs7AtdFY89XaCqK5TAIMeWqjUgTKVNsFw3v"
+DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
+USER_ID = "b."
+TOKEN = "BQDaBc1UbgRFtWtv9o6mrUi_H1IbNZbj-QkkewLS1yb-uRiYiaz2wzSI2zLpvbOunoAnWTbBPOHUreFgfNX8wVgCYRcwfpctAtE6g9YNztOzN2-ECKSxkwGGYCZXDfaqQgIDP2LH4s_em7XRTp9hvhpCihtsCXlvEY7RxgnMm7bX"
 
 def check_if_valid_data(df: pd.DataFrame) -> bool:
+    # Check if dataframe is empty
     if df.empty:
-        print("No song downloaded, Finised execution")
-        return False
-    
+        print("No songs downloaded. Finishing execution")
+        return False 
+
+    # Primary Key Check
     if pd.Series(df['played_at']).is_unique:
         pass
     else:
         raise Exception("Primary Key check is violated")
-    
+
+    # Check for nulls
     if df.isnull().values.any():
         raise Exception("Null values found")
-    
-    yesterday = datetime.datetime.now() - datetime.timestamp(day = 1)
+
+    # Check that all timestamps are of yesterday's date
+    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
     yesterday = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
 
     timestamps = df["timestamp"].tolist()
-    
     for timestamp in timestamps:
-        if datetime.datetime.strptime(timestamp, "%Y-%M-%d") != yesterday:
-            raise Exception("At least one of the returned songs does not come from within the last 24 hours")
-    
-    return True
-    
+        if datetime.datetime.strptime(timestamp, '%Y-%m-%d') != yesterday:
+            raise Exception("At least one of the returned songs does not have a yesterday's timestamp")
 
+    return True
 
 if __name__ == "__main__":
 
-    header = {
+    # Extract part of the ETL process
+ 
+    headers = {
         "Accept" : "application/json",
-        "content-Type" : "application/json",
+        "Content-Type" : "application/json",
         "Authorization" : "Bearer {token}".format(token=TOKEN)
     }
     
+    # Convert time to Unix timestamp in miliseconds      
     today = datetime.datetime.now()
-    yesterday = today - datetime.timedelta(day=1) 
+    yesterday = today - datetime.timedelta(days=1)
     yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
 
-    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp, header = headers))
+    # Download all songs you've listened to "after yesterday", which means in the last 24 hours      
+    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers = headers)
 
     data = r.json()
 
@@ -59,28 +63,31 @@ if __name__ == "__main__":
     played_at_list = []
     timestamps = []
 
-    for song in data["item"]:
+    # Extracting only the relevant bits of data from the json object      
+    for song in data["items"]:
         song_names.append(song["track"]["name"])
-        artist_names.append(song["track"]["album"]["artists"]["name"])
+        artist_names.append(song["track"]["album"]["artists"][0]["name"])
         played_at_list.append(song["played_at"])
-        timestamps.append(song["played_at"])
-
+        timestamps.append(song["played_at"][0:10])
+        
+    # Prepare a dictionary in order to turn it into a pandas dataframe below       
     song_dict = {
         "song_name" : song_names,
-        "artist_names" : artist_names,
+        "artist_name": artist_names,
         "played_at" : played_at_list,
         "timestamp" : timestamps
     }
 
-    song_df = pd.DataFrame(song_dict, column = ["song_names", "artist_names", "played_at", "timestamp"])
-    
+    song_df = pd.DataFrame(song_dict, columns = ["song_name", "artist_name", "played_at", "timestamp"])
+    song_df = song_df.drop([0])
     # Validate
     if check_if_valid_data(song_df):
-        print("Data valid, process to Load stage")
-    
-    #Load
+        print("Data valid, proceed to Load stage")
+
+    # Load
+
     engine = sqlalchemy.create_engine(DATABASE_LOCATION)
-    conn = sqlite3.connect("my_played_track.sqlite")
+    conn = sqlite3.connect('my_played_tracks.sqlite')
     cursor = conn.cursor()
 
     sql_query = """
@@ -89,16 +96,17 @@ if __name__ == "__main__":
         artist_name VARCHAR(200),
         played_at VARCHAR(200),
         timestamp VARCHAR(200),
-        CONSTRANT primary_key_constraint PRIMARY KEY (played_at)
+        CONSTRAINT primary_key_constraint PRIMARY KEY (played_at)
     )
     """
+
     cursor.execute(sql_query)
     print("Opened database successfully")
-    
+
     try:
-        song_df.to_sql("my_played_tracts", engine, index=False, if_exists="append")
+        song_df.to_sql("my_played_tracks", engine, index=False, if_exists='append')
     except:
-        print("Data already exists in Database")
+        print("Data already exists in the database")
 
     conn.close()
-    print("close database successfully")
+    print("Close database successfully")
