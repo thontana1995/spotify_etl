@@ -6,7 +6,7 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
 from spotify_etl import run_spotify_etl
 
-defualt_args = {
+default_args = {
     'owner': 'airflow',
     'depend_on_past': False,
     'start_date': days_ago(0,0,0,0,0),
@@ -19,7 +19,7 @@ defualt_args = {
 
 dag = DAG(
     'spotify_dag',
-    defualt_args=defualt_args,
+    default_args=default_args,
     description= 'Our first',
     scheduler=timedelta(days=1),
 )
