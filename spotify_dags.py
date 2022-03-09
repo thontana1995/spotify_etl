@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from sched import scheduler
 from airflow import DAG
 from pandas import describe_option
-from airflow.operator.python_operator import PythonOperator
+from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
 from spotify_etl import run_spotify_etl
 
