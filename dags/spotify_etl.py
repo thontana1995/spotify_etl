@@ -38,8 +38,8 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
 # Job scheduler
 def run_spotify_etl():
     DATABASE_LOCATION = "sqlite:///my_played_tracks.sqlite"
-    USER_ID = "b."
-    TOKEN = "BQAFMoIpUeGdjRW10yyJ7V5ryUV8BBmtV1ao5542QrkkUnV-27PlaxMcX0GPsKfc15Gd65_b9IJ0nLNNoe7MpKCZON1LSvmhrCwl9Q-evfVGM_CKa61w1prIahACgZ4DxuXxu_akUrPqg5K6PBWj4PLJUzQp-IoxQ_k0qp0AinRH"
+    USER_ID = "YOUR USER ID"
+    TOKEN = "YOUR TOKEN"
 
     headers = {
         "Accept" : "application/json",
